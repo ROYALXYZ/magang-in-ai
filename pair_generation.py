@@ -475,10 +475,20 @@ print("=" * 60)
 # Simpan daftar semua unique skills sebagai referensi
 skill_vocab_path = OUTPUT_VOCAB_PATH
 skill_vocab_df = pd.DataFrame({'skill': all_skills, 'index': range(len(all_skills))})
-skill_vocab_df.to_csv(skill_vocab_path, index=False)
-print(f"Saved skill vocabulary to: {skill_vocab_path}")
-print(f"Total skills in vocabulary: {len(all_skills)}")
-print("\nVocabulary ini akan dipakai untuk:")
+
+if not os.path.exists(skill_vocab_path):
+    skill_vocab_df.to_csv(skill_vocab_path, index=False)
+    print(f"Saved skill vocabulary to: {skill_vocab_path}")
+    print(f"Total skills in vocabulary: {len(all_skills)}")
+else:
+    existing_vocab = pd.read_csv(skill_vocab_path)
+    print(f"Skill vocabulary already exists at: {skill_vocab_path} (NOT overwritten)")
+    print(f"  Existing vocabulary: {len(existing_vocab)} skills")
+    print(f"  Generated from dataset: {len(all_skills)} skills")
+    if len(existing_vocab) != len(all_skills):
+        print(f"  Note: Perbedaan karena vocabulary dikurasi manual (tambahan skill dari roadmap.sh)")
+
+print("\nVocabulary ini dipakai untuk:")
 print("  - Multi-hot encoding saat training")
 print("  - Encoding input user saat inference")
 print("  - Fuzzy matching saat OCR CV parsing")
