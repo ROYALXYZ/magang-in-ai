@@ -1,0 +1,9 @@
+# Magang-in AI - Ignore files
+__pycache__/
+*.pyc
+*.pyo
+.env
+logs/
+*.zip
+*.tar.gz
+.ipynb_checkpoints/

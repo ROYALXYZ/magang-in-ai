@@ -1,0 +1,37 @@
+============================================================
+SIAMESE NETWORK - EVALUATION REPORT
+Magang-in Project - AI Team
+============================================================
+
+Model: Siamese Network (Functional API)
+Input dimension: 80 skills
+Training pairs: 2291
+Validation pairs: 573
+Optimal threshold: 0.45
+
+METRICS:
+  Accuracy:  0.9651
+  Precision: 0.9555
+  Recall:    0.9755
+  F1-Score:  0.9654
+  MAE:       0.0485
+
+CONFUSION MATRIX:
+  TN=274  FP=13
+  FN=7  TP=279
+
+CLASSIFICATION REPORT:
+              precision    recall  f1-score   support
+
+ Tidak Cocok       0.98      0.95      0.96       287
+       Cocok       0.96      0.98      0.97       286
+
+    accuracy                           0.97       573
+   macro avg       0.97      0.97      0.97       573
+weighted avg       0.97      0.97      0.97       573
+
+TRAINING HISTORY:
+  Total epochs trained: 52
+  Final train loss: 0.0173
+  Final val loss: 0.0254
+  Best F1 epoch: 37
