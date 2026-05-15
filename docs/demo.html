@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magang-in AI — Demo Frontend</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f7fa; color: #333; }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        h1 { text-align: center; margin: 20px 0; color: #2c3e50; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
+        
+        /* Tabs */
+        .tabs { display: flex; gap: 0; margin-bottom: 0; }
+        .tab { padding: 12px 24px; background: #e0e0e0; border: none; cursor: pointer; font-size: 14px; font-weight: 500; border-radius: 8px 8px 0 0; }
+        .tab.active { background: #fff; color: #2c3e50; box-shadow: 0 -2px 4px rgba(0,0,0,0.05); }
+        
+        /* Panels */
+        .panel { background: #fff; padding: 24px; border-radius: 0 8px 8px 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: none; }
+        .panel.active { display: block; }
+        
+        /* Form */
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; }
+        .skill-select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; min-height: 120px; }
+        .file-input { padding: 10px; border: 2px dashed #ddd; border-radius: 6px; width: 100%; cursor: pointer; }
+        .btn { padding: 12px 24px; background: #3498db; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; }
+        .btn:hover { background: #2980b9; }
+        .btn:disabled { background: #bdc3c7; cursor: not-allowed; }
+        .btn-secondary { background: #95a5a6; }
+        .btn-secondary:hover { background: #7f8c8d; }
+        
+        /* Config */
+        .config { background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 20px; }
+        .config input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 100%; font-size: 13px; }
+        .config label { font-size: 12px; color: #666; }
+        
+        /* Results */
+        .results { margin-top: 20px; }
+        .result-card { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+        .result-card.strong { border-left: 4px solid #27ae60; }
+        .result-card.partial { border-left: 4px solid #f39c12; }
+        .result-card.low { border-left: 4px solid #e74c3c; }
+        .result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .result-title { font-weight: 700; font-size: 16px; }
+        .result-score { font-size: 14px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
+        .result-score.strong { background: #d4efdf; color: #27ae60; }
+        .result-score.partial { background: #fdebd0; color: #f39c12; }
+        .result-score.low { background: #fadbd8; color: #e74c3c; }
+        .result-meta { font-size: 13px; color: #666; margin-bottom: 8px; }
+        .skill-tag { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 12px; margin: 2px; }
+        .skill-matched { background: #d4efdf; color: #27ae60; }
+        .skill-missing { background: #fadbd8; color: #e74c3c; }
+        .roadmap-link { color: #3498db; text-decoration: none; font-size: 13px; }
+        .roadmap-link:hover { text-decoration: underline; }
+        
+        /* Loading & Status */
+        .loading { text-align: center; padding: 20px; color: #666; }
+        .status { padding: 8px 12px; border-radius: 4px; font-size: 13px; margin-bottom: 12px; }
+        .status.success { background: #d4efdf; color: #27ae60; }
+        .status.error { background: #fadbd8; color: #e74c3c; }
+        .status.info { background: #d6eaf8; color: #2980b9; }
+        
+        /* JSON viewer */
+        .json-viewer { background: #2c3e50; color: #ecf0f1; padding: 16px; border-radius: 6px; font-family: monospace; font-size: 12px; overflow-x: auto; max-height: 300px; overflow-y: auto; margin-top: 12px; white-space: pre-wrap; }
+        
+        /* Toggle */
+        .toggle-raw { font-size: 12px; color: #3498db; cursor: pointer; margin-top: 8px; }
+        
+        /* Extracted skills */
+        .extracted-skills { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Magang-in AI — Demo</h1>
+        <p class="subtitle">Demo integrasi frontend dengan Skill Matching API</p>
+        
+        <!-- API Config -->
+        <div class="config">
+            <label>API Base URL:</label>
+            <input type="text" id="baseUrl" value="http://192.168.30.3:8001" placeholder="https://api-magangin.domain.com">
+            <small style="color:#999; display:block; margin-top:4px;">Ubah ke URL production Cloudflare Tunnel kamu</small>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('self-declare')">Self-Declaration</button>
+            <button class="tab" onclick="switchTab('upload-cv')">Upload CV</button>
+            <button class="tab" onclick="switchTab('normalize')">Normalize Skill</button>
+        </div>
+        
+        <!-- Panel 1: Self Declaration -->
+        <div class="panel active" id="panel-self-declare">
+            <h3 style="margin-bottom:12px;">Pilih Skill Kamu</h3>
+            <p style="font-size:13px; color:#666; margin-bottom:12px;">Pilih skill dari daftar (tahan Ctrl/Cmd untuk pilih banyak)</p>
+            
+            <div class="form-group">
+                <select id="skillSelect" class="skill-select" multiple>
+                    <option value="">Loading skills...</option>
+                </select>
+            </div>
+            
+            <div style="display:flex; gap:8px; align-items:center;">
+                <button class="btn" onclick="submitMatch()">Cari Lowongan Cocok</button>
+                <span id="selectedCount" style="font-size:13px; color:#666;">0 skill dipilih</span>
+            </div>
+            
+            <div id="matchResults" class="results"></div>
+        </div>
+        
+        <!-- Panel 2: Upload CV -->
+        <div class="panel" id="panel-upload-cv">
+            <h3 style="margin-bottom:12px;">Upload CV (PDF)</h3>
+            <p style="font-size:13px; color:#666; margin-bottom:12px;">Upload file CV dalam format PDF. Sistem akan otomatis mendeteksi skill dari CV kamu.</p>
+            
+            <div class="form-group">
+                <input type="file" id="cvFile" class="file-input" accept=".pdf">
+            </div>
+            
+            <button class="btn" onclick="uploadCV()">Extract Skill dari CV</button>
+            
+            <div id="cvResults" class="results"></div>
+        </div>
+        
+        <!-- Panel 3: Normalize -->
+        <div class="panel" id="panel-normalize">
+            <h3 style="margin-bottom:12px;">Normalize Skill</h3>
+            <p style="font-size:13px; color:#666; margin-bottom:12px;">Test normalisasi skill. Masukkan skill dalam format apapun, sistem akan normalize ke format standar.</p>
+            
+            <div class="form-group">
+                <label>Masukkan skill (pisahkan dengan koma):</label>
+                <input type="text" id="normalizeInput" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;" placeholder="React.js, Node.js, C++, PostgreSQL, CI/CD">
+            </div>
+            
+            <button class="btn" onclick="normalizeSkills()">Normalize</button>
+            
+            <div id="normalizeResults" class="results"></div>
+        </div>
+    </div>
+
+    <script>
+        // =====================================================================
+        // CONFIG
+        // =====================================================================
+        function getBaseUrl() {
+            return document.getElementById('baseUrl').value.replace(/\/$/, '');
+        }
+
+        // =====================================================================
+        // TAB SWITCHING
+        // =====================================================================
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(`panel-${tabName}`).classList.add('active');
+        }
+
+        // =====================================================================
+        // LOAD SKILLS (GET /api/skills)
+        // =====================================================================
+        async function loadSkills() {
+            try {
+                const response = await fetch(`${getBaseUrl()}/api/skills`);
+                const data = await response.json();
+                
+                const select = document.getElementById('skillSelect');
+                select.innerHTML = '';
+                
+                data.skills.forEach(skill => {
+                    const option = document.createElement('option');
+                    option.value = skill;
+                    option.textContent = skill;
+                    select.appendChild(option);
+                });
+                
+                // Update count on change
+                select.addEventListener('change', () => {
+                    const count = select.selectedOptions.length;
+                    document.getElementById('selectedCount').textContent = `${count} skill dipilih`;
+                });
+                
+            } catch (error) {
+                document.getElementById('skillSelect').innerHTML = '<option>Error loading skills. Cek API URL.</option>';
+            }
+        }
+
+        // =====================================================================
+        // SUBMIT MATCH (POST /api/match)
+        // =====================================================================
+        async function submitMatch() {
+            const select = document.getElementById('skillSelect');
+            const selectedSkills = Array.from(select.selectedOptions).map(o => o.value);
+            
+            if (selectedSkills.length === 0) {
+                alert('Pilih minimal 1 skill!');
+                return;
+            }
+            
+            const resultsDiv = document.getElementById('matchResults');
+            resultsDiv.innerHTML = '<div class="loading">Mencari lowongan yang cocok...</div>';
+            
+            try {
+                const response = await fetch(`${getBaseUrl()}/api/match`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        skills: selectedSkills,
+                        top_n: 10
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    resultsDiv.innerHTML = `<div class="status error">Error: ${data.detail}</div>`;
+                    return;
+                }
+                
+                renderMatchResults(data, resultsDiv);
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="status error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // =====================================================================
+        // UPLOAD CV (POST /api/extract-cv)
+        // =====================================================================
+        async function uploadCV() {
+            const fileInput = document.getElementById('cvFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Pilih file PDF terlebih dahulu!');
+                return;
+            }
+            
+            const resultsDiv = document.getElementById('cvResults');
+            resultsDiv.innerHTML = '<div class="loading">Mengekstrak skill dari CV...</div>';
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch(`${getBaseUrl()}/api/extract-cv`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    resultsDiv.innerHTML = `<div class="status error">Error: ${data.detail}</div>`;
+                    return;
+                }
+                
+                // Render extracted skills
+                let html = `
+                    <div class="status success">
+                        Berhasil! ${data.total_skills_found} skill terdeteksi 
+                        (method: ${data.extraction_method}, ${data.pages_processed} halaman)
+                    </div>
+                    <h4 style="margin:12px 0 8px;">Skill Terdeteksi:</h4>
+                    <div class="extracted-skills">
+                        ${data.extracted_skills.map(s => `<span class="skill-tag skill-matched">${s}</span>`).join('')}
+                    </div>
+                `;
+                
+                if (data.direct_matched.length > 0) {
+                    html += `<p style="font-size:12px; color:#666;">Direct match: ${data.direct_matched.join(', ')}</p>`;
+                }
+                if (data.fuzzy_matched.length > 0) {
+                    html += `<p style="font-size:12px; color:#666;">Fuzzy match: ${data.fuzzy_matched.join(', ')}</p>`;
+                }
+                
+                // Button to use extracted skills for matching
+                html += `<br><button class="btn" onclick="matchWithExtracted('${data.extracted_skills.join(',')}')">Cari Lowongan dengan Skill Ini →</button>`;
+                
+                // Raw JSON toggle
+                html += `<div class="toggle-raw" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">▶ Lihat Raw JSON Response</div>`;
+                html += `<div class="json-viewer" style="display:none">${JSON.stringify(data, null, 2)}</div>`;
+                
+                resultsDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="status error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Match with extracted skills from CV
+        async function matchWithExtracted(skillsStr) {
+            const skills = skillsStr.split(',');
+            const resultsDiv = document.getElementById('cvResults');
+            
+            resultsDiv.innerHTML += '<div class="loading" style="margin-top:16px;">Mencari lowongan yang cocok...</div>';
+            
+            try {
+                const response = await fetch(`${getBaseUrl()}/api/match`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ skills: skills, top_n: 10 })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    resultsDiv.innerHTML += `<div class="status error">Error: ${data.detail}</div>`;
+                    return;
+                }
+                
+                const matchDiv = document.createElement('div');
+                matchDiv.style.marginTop = '20px';
+                renderMatchResults(data, matchDiv);
+                resultsDiv.appendChild(matchDiv);
+                
+            } catch (error) {
+                resultsDiv.innerHTML += `<div class="status error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // =====================================================================
+        // NORMALIZE SKILLS (POST /api/normalize)
+        // =====================================================================
+        async function normalizeSkills() {
+            const input = document.getElementById('normalizeInput').value;
+            if (!input.trim()) {
+                alert('Masukkan skill terlebih dahulu!');
+                return;
+            }
+            
+            const skills = input.split(',').map(s => s.trim()).filter(s => s);
+            const resultsDiv = document.getElementById('normalizeResults');
+            resultsDiv.innerHTML = '<div class="loading">Normalizing...</div>';
+            
+            try {
+                const response = await fetch(`${getBaseUrl()}/api/normalize`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ skills: skills })
+                });
+                
+                const data = await response.json();
+                
+                let html = `
+                    <div class="status ${data.total_unknown > 0 ? 'info' : 'success'}">
+                        ${data.total_recognized} skill dikenali, ${data.total_unknown} tidak dikenali
+                    </div>
+                    <h4 style="margin:12px 0 8px;">Hasil Normalisasi:</h4>
+                    <div class="extracted-skills">
+                        ${data.normalized.map(s => `<span class="skill-tag skill-matched">${s}</span>`).join('')}
+                        ${data.unknown.map(s => `<span class="skill-tag skill-missing">${s} (unknown)</span>`).join('')}
+                    </div>
+                `;
+                
+                // Mapping table
+                html += `<h4 style="margin:16px 0 8px;">Mapping:</h4><table style="font-size:13px; border-collapse:collapse; width:100%;">`;
+                html += `<tr style="background:#f0f0f0;"><th style="padding:6px; text-align:left;">Input</th><th style="padding:6px; text-align:left;">Normalized</th></tr>`;
+                skills.forEach((skill, i) => {
+                    const normalized = data.normalized.find(n => true); // simplified
+                    html += `<tr><td style="padding:6px; border-bottom:1px solid #eee;">${skill}</td><td style="padding:6px; border-bottom:1px solid #eee;">${data.normalized[i] || '❌ unknown'}</td></tr>`;
+                });
+                html += `</table>`;
+                
+                // Raw JSON
+                html += `<div class="toggle-raw" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">▶ Lihat Raw JSON Response</div>`;
+                html += `<div class="json-viewer" style="display:none">${JSON.stringify(data, null, 2)}</div>`;
+                
+                resultsDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="status error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // =====================================================================
+        // RENDER MATCH RESULTS
+        // =====================================================================
+        function renderMatchResults(data, container) {
+            let html = `
+                <div class="status info">
+                    Skill kamu: ${data.user_skills_normalized.join(', ')}
+                    ${data.unknown_skills.length > 0 ? `<br>Tidak dikenali: ${data.unknown_skills.join(', ')}` : ''}
+                </div>
+                <h4 style="margin:12px 0;">${data.total_results} Lowongan Ditemukan</h4>
+            `;
+            
+            data.results.forEach(r => {
+                const categoryClass = r.match_category === 'Strong Match' ? 'strong' : 
+                                     r.match_category === 'Partial Match' ? 'partial' : 'low';
+                const coveragePct = Math.round(r.coverage_score * 100);
+                
+                html += `
+                    <div class="result-card ${categoryClass}">
+                        <div class="result-header">
+                            <span class="result-title">#${r.rank} ${r.title}</span>
+                            <span class="result-score ${categoryClass}">${coveragePct}% match</span>
+                        </div>
+                        <div class="result-meta">
+                            ${r.company} · ${r.location} · ${r.role}
+                            <br>Final: ${r.final_score.toFixed(3)} | Model: ${r.model_score.toFixed(3)} | Coverage: ${coveragePct}% (${r.n_matched}/${r.n_required})
+                            <br>Category: ${r.match_category}
+                        </div>
+                        <div>
+                            <strong style="font-size:12px;">Matched:</strong>
+                            ${r.matched_skills.map(s => `<span class="skill-tag skill-matched">${s}</span>`).join('')}
+                        </div>
+                        <div style="margin-top:4px;">
+                            <strong style="font-size:12px;">Missing:</strong>
+                            ${r.missing_skills.map(s => `<span class="skill-tag skill-missing">${s}</span>`).join('')}
+                        </div>
+                        ${r.roadmap_url ? `<a href="${r.roadmap_url}" target="_blank" class="roadmap-link" style="display:block; margin-top:8px;">📚 Lihat Roadmap →</a>` : ''}
+                    </div>
+                `;
+            });
+            
+            // Raw JSON toggle
+            html += `<div class="toggle-raw" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">▶ Lihat Raw JSON Response</div>`;
+            html += `<div class="json-viewer" style="display:none">${JSON.stringify(data, null, 2)}</div>`;
+            
+            container.innerHTML = html;
+        }
+
+        // =====================================================================
+        // INIT
+        // =====================================================================
+        window.onload = function() {
+            loadSkills();
+        };
+    </script>
+</body>
+</html>
